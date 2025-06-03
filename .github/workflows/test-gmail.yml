@@ -30,10 +30,10 @@ jobs:
         echo "Starting Gmail integration test..."
         python -c "
         import logging
-        from gmail_utils import load_credentials
+        from gmail_utils import get_gmail_service
         try:
-            credentials, tokens = load_credentials()
-            print('Test completed successfully!')
+            service = get_gmail_service()
+            print('Gmail service built and tested successfully!')
         except Exception as e:
             print(f'Test failed: {str(e)}')
             exit(1)

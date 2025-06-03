@@ -62,18 +62,32 @@ def load_credentials():
         raise
 
 def get_gmail_service():
-    credentials, tokens = load_credentials()
-    creds = Credentials(
-        token=tokens['token'],
-        refresh_token=tokens['refresh_token'],
-        token_uri=tokens['token_uri'],
-        client_id=tokens['client_id'],
-        client_secret=tokens['client_secret'],
-        scopes=tokens['scopes']
-    )
-    
-    service = build('gmail', 'v1', credentials=creds)
-    return service
+    try:
+        logging.info("Starting to build Gmail service...")
+        credentials, tokens = load_credentials()
+        
+        logging.info("Creating credentials object...")
+        creds = Credentials(
+            token=tokens['token'],
+            refresh_token=tokens['refresh_token'],
+            token_uri=tokens['token_uri'],
+            client_id=tokens['client_id'],
+            client_secret=tokens['client_secret'],
+            scopes=tokens['scopes']
+        )
+        
+        logging.info("Building Gmail service...")
+        service = build('gmail', 'v1', credentials=creds)
+        
+        # Test the service by making a simple API call
+        logging.info("Testing Gmail service with a simple API call...")
+        profile = service.users().getProfile(userId='me').execute()
+        logging.info(f"Successfully connected to Gmail account: {profile.get('emailAddress')}")
+        
+        return service
+    except Exception as e:
+        logging.error(f"Failed to build Gmail service: {str(e)}")
+        raise
 
 def create_message(sender, to, subject, message_text, attachments=None):
     message = MIMEMultipart()
