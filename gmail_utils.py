@@ -13,32 +13,46 @@ import os
 import tempfile
 from dotenv import load_dotenv
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
 # Load environment variables from .env file
 load_dotenv()
 
 # Load credentials from environment variables or GitHub Secrets
 def load_credentials():
     try:
+        logging.info("Starting to load credentials...")
         # Get credentials from environment variables
         client_secret = os.environ.get('GMAIL_CLIENT_SECRET')
         token_data = os.environ.get('GMAIL_TOKEN_DATA')
         
         if not client_secret or not token_data:
+            logging.warning("Environment variables not found, trying local files...")
             # Try to load from local files if environment variables are not set
             try:
                 with open('clientsecret.json', 'r') as f:
                     client_secret = f.read()
                 with open('token.json', 'r') as f:
                     token_data = f.read()
+                logging.info("Successfully loaded credentials from local files")
             except FileNotFoundError:
+                logging.error("No credentials found in environment variables or local files")
                 raise ValueError("Credentials not found. Please either:\n"
                                "1. Set GMAIL_CLIENT_SECRET and GMAIL_TOKEN_DATA environment variables\n"
                                "2. Place clientsecret.json and token.json in the project directory")
+        else:
+            logging.info("Successfully loaded credentials from environment variables")
         
         # Parse the JSON strings
         credentials = json.loads(client_secret)
         tokens = json.loads(token_data)
-        logging.info(f"Loaded credentials:success")
+        logging.info("Successfully parsed JSON credentials")
+        
         return credentials, tokens
     except json.JSONDecodeError as e:
         logging.error(f"Error parsing JSON from credentials: {e}")

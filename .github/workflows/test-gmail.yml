@@ -27,4 +27,14 @@ jobs:
         GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
         GMAIL_TOKEN_DATA: ${{ secrets.GMAIL_TOKEN_DATA }}
       run: |
-        python -c "from gmail_utils import load_credentials; load_credentials()" 
+        echo "Starting Gmail integration test..."
+        python -c "
+        import logging
+        from gmail_utils import load_credentials
+        try:
+            credentials, tokens = load_credentials()
+            print('Test completed successfully!')
+        except Exception as e:
+            print(f'Test failed: {str(e)}')
+            exit(1)
+        " 
