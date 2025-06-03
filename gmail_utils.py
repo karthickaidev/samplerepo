@@ -76,13 +76,34 @@ def get_gmail_service():
             scopes=tokens['scopes']
         )
         
+        # Check if token needs refresh
+        if creds.expired:
+            logging.info("Token expired, attempting to refresh...")
+            try:
+                creds.refresh(Request())
+                logging.info("Token refreshed successfully")
+            except Exception as e:
+                logging.error(f"Failed to refresh token: {str(e)}")
+                raise
+        
         logging.info("Building Gmail service...")
         service = build('gmail', 'v1', credentials=creds)
         
         # Test the service by making a simple API call
         logging.info("Testing Gmail service with a simple API call...")
-        profile = service.users().getProfile(userId='me').execute()
-        logging.info(f"Successfully connected to Gmail account: {profile.get('emailAddress')}")
+        try:
+            profile = service.users().getProfile(userId='me').execute()
+            logging.info(f"Successfully connected to Gmail account: {profile.get('emailAddress')}")
+        except Exception as e:
+            if '401' in str(e):
+                logging.info("Received 401 error, attempting token refresh...")
+                creds.refresh(Request())
+                # Rebuild service with new token
+                service = build('gmail', 'v1', credentials=creds)
+                profile = service.users().getProfile(userId='me').execute()
+                logging.info(f"Successfully connected to Gmail account after refresh: {profile.get('emailAddress')}")
+            else:
+                raise
         
         return service
     except Exception as e:
