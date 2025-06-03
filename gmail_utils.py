@@ -12,6 +12,7 @@ import os.path
 import os
 import tempfile
 from dotenv import load_dotenv
+import pickle
 
 # Configure logging
 logging.basicConfig(
@@ -22,6 +23,9 @@ logging.basicConfig(
 
 # Load environment variables from .env file
 load_dotenv()
+
+# If modifying these scopes, delete the file token.pickle.
+SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 
 # Load credentials from environment variables or GitHub Secrets
 def load_credentials():
@@ -73,7 +77,7 @@ def get_gmail_service():
             token_uri=tokens['token_uri'],
             client_id=tokens['client_id'],
             client_secret=tokens['client_secret'],
-            scopes=tokens['scopes']
+            scopes=SCOPES
         )
         
         # Check if token needs refresh
@@ -87,7 +91,7 @@ def get_gmail_service():
                 raise
         
         logging.info("Building Gmail service...")
-        service = build('gmail', 'v1', credentials=creds)
+        service = build('gmail', 'v1', credentials=creds, cache_discovery=False)
         
         # Test the service by making a simple API call
         logging.info("Testing Gmail service with a simple API call...")
@@ -99,7 +103,7 @@ def get_gmail_service():
                 logging.info("Received 401 error, attempting token refresh...")
                 creds.refresh(Request())
                 # Rebuild service with new token
-                service = build('gmail', 'v1', credentials=creds)
+                service = build('gmail', 'v1', credentials=creds, cache_discovery=False)
                 profile = service.users().getProfile(userId='me').execute()
                 logging.info(f"Successfully connected to Gmail account after refresh: {profile.get('emailAddress')}")
             else:
