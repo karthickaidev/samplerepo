@@ -11,27 +11,40 @@ from googleapiclient.discovery import build
 import os.path
 import os
 import tempfile
+from dotenv import load_dotenv
 
-# Load credentials from GitHub Secrets
+# Load environment variables from .env file
+load_dotenv()
+
+# Load credentials from environment variables or GitHub Secrets
 def load_credentials():
     try:
-        # Get credentials from GitHub Secrets
+        # Get credentials from environment variables
         client_secret = os.environ.get('GMAIL_CLIENT_SECRET')
         token_data = os.environ.get('GMAIL_TOKEN_DATA')
         
         if not client_secret or not token_data:
-            raise ValueError("GitHub Secrets not found. Please ensure GMAIL_CLIENT_SECRET and GMAIL_TOKEN_DATA are set in your repository secrets.")
+            # Try to load from local files if environment variables are not set
+            try:
+                with open('clientsecret.json', 'r') as f:
+                    client_secret = f.read()
+                with open('token.json', 'r') as f:
+                    token_data = f.read()
+            except FileNotFoundError:
+                raise ValueError("Credentials not found. Please either:\n"
+                               "1. Set GMAIL_CLIENT_SECRET and GMAIL_TOKEN_DATA environment variables\n"
+                               "2. Place clientsecret.json and token.json in the project directory")
         
-        # Parse the JSON strings from secrets
+        # Parse the JSON strings
         credentials = json.loads(client_secret)
         tokens = json.loads(token_data)
-        
+        logging.info(f"Loaded credentials:success")
         return credentials, tokens
     except json.JSONDecodeError as e:
-        logging.error(f"Error parsing JSON from GitHub Secrets: {e}")
+        logging.error(f"Error parsing JSON from credentials: {e}")
         raise
     except Exception as e:
-        logging.error(f"Error loading credentials from GitHub Secrets: {e}")
+        logging.error(f"Error loading credentials: {e}")
         raise
 
 def get_gmail_service():
@@ -140,3 +153,6 @@ def send_completion_email(emails_list, output_file, doc_id):
     except Exception as e:
         logging.error(f"Failed to send completion email: {str(e)}")
         raise
+
+
+load_credentials()
